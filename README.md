@@ -123,7 +123,7 @@ src/
 
 ```bash
 # 1. Clone o projeto
-git clone https://github.com/seu-usuario/auth-mastery-lab.git
+git clone https://github.com/juelsonjunior/backend-mastery-lab.git
 
 # 2. Instale as dependências
 npm install
