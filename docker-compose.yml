@@ -33,7 +33,7 @@ services:
     networks:
       - backend-net
 
-  volumes: 
-    mongo-data:
-  networks: 
-    backend-net:
+volumes: 
+  mongo-data:
+networks: 
+  backend-net:

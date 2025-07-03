@@ -1,5 +1,5 @@
 # Etapa 1 build
-FROM node:18-aspine AS build
+FROM node:18 AS build
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN npm install
 COPY . .
 
 # Etapa 2 produção
-FROM node:18-aspine
+FROM node:18
 
 WORKDIR /app
 
