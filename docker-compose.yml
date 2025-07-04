@@ -1,6 +1,9 @@
+
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: backend_api
     restart: always
     ports:
@@ -10,8 +13,6 @@ services:
       - redis
     env_file:
       - .env
-    volumes:
-      - .:/app
     networks:
       - backend-net
 
@@ -33,7 +34,8 @@ services:
     networks:
       - backend-net
 
-volumes: 
+volumes:
   mongo-data:
-networks: 
+
+networks:
   backend-net:
