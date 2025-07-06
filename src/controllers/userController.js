@@ -1,62 +1,61 @@
-import userService from "../service/userService.js";
+import BaseController from "./baseController.js";
 
-const userController = {
-  async profile(req, res) {
-    try {
-      const result = await userService.profile(req.user.userId, req.body);
-      res.status(200).json(result);
-    } catch (err) {
-      res.status(500).json({ message: "Erro interno", error: err.message });
-    }
-  },
+export default class UserController extends BaseController {
+  constructor(userService) {
+    super();
+    this.userService = userService;
 
-  async updatedPassword(req, res) {
-    const token = req.headers.authorization.split(" ")[1];
-    try {
-      const result = await userService.updatedPassword(token, {
-        userId: req.user.userId,
-        oldPassword: req.body.oldPassword,
-        newPassword: req.body.newPassword,
-      });
-      res.status(200).json(result);
-    } catch (err) {
-      res.status(500).json({ message: "Erro interno", error: err.message });
-    }
-  },
+    this.home = this.home.bind(this);
+    
+    this.profile = this.handlerRequest(
+      this.profileHandler.bind(this)
+    );
+    this.updatedPassword = this.handlerRequest(
+      this.updatedPasswordHandler.bind(this)
+    );
+    this.deleteAccount = this.handlerRequest(
+      this.deleteAccountHandler.bind(this)
+    );
+    this.listRefreshTokens = this.handlerRequest(
+      this.listRefreshTokensHandler.bind(this)
+    );
+  }
 
-  async deleteAccount(req, res) {
-    try {
-      const result = await userService.deleteAccount({
-        id: req.user.userId,
-        password: req.body.password,
-      });
-      res
-        .clearCookie("refreshToken", {
-          httpOnly: true,
-          secure: true,
-          sameSite: "Strict",
-        })
-        .status(200)
-        .json(result);
-    } catch (err) {
-      res.status(500).json({ message: "Erro interno", error: err.message });
-    }
-  },
-
-  async Home(req, res) {
+  async home(req, res) {
     res.status(200).json({
       message: `Acesso autorizado a Home. Usuário ID: ${req.user.userId}`,
     });
-  },
+  }
 
-  async listRefreshTokens(req, res) {
-    try {
-      const result = await userService.listRefreshTokens(req.user.userId);
-      res.status(200).json(result);
-    } catch (err) {
-      res.status(500).json({ message: "Erro interno", error: err.message });
-    }
-  },
-};
+  async profileHandler(req) {
+    return this.userService.profile(req.user.userId, req.body);
+  }
 
-export default userController;
+  async updatedPasswordHandler(req) {
+    const token = req.headers.authorization.split(" ")[1];
+
+    return this.userService.updatedPassword(token, {
+      userId: req.user.userId,
+      oldPassword: req.body.oldPassword,
+      newPassword: req.body.newPassword,
+    });
+  }
+
+  async deleteAccountHandler(req, res) {
+    const result = await this.userService.deleteAccount({
+      id: req.user.userId,
+      password: req.body.password,
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+    });
+    return result;
+  }
+
+  async listRefreshTokensHandler(req) {
+    return this.userService.listRefreshTokens(req.user.userId);
+  }
+}
