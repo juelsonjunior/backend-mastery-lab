@@ -1,27 +1,29 @@
-import UserModel from "../models/User.js";
+export default class UserRepository {
+  constructor(userModel) {
+    this.userModel = userModel;
+  }
 
-const userRepository = {
   async create(userData) {
-    return await UserModel.create(userData).select("-password");
-  },
+    return await this.userModel.create(userData);
+  }
 
   async findByEmail(email) {
-    return await UserModel.findOne({ email });
-  },
+    return await this.userModel.findOne({ email });
+  }
 
   async findById(id) {
-    return await UserModel.findOne({ _id: id });
-  },
+    return await this.userModel.findOne({ _id: id });
+  }
 
   async update(id, userData) {
-    return await UserModel.findByIdAndUpdate(id, userData, {
-      new: true,
-    }).select("-password");
-  },
+    return await this.userModel
+      .findByIdAndUpdate(id, userData, {
+        new: true,
+      })
+      .select("-password");
+  }
 
   async delete(id) {
-    return await UserModel.findByIdAndDelete({ _id: id });
-  },
-};
-
-export default userRepository;
+    return await this.userModel.findByIdAndDelete({ _id: id });
+  }
+}
