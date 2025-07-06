@@ -1,10 +1,15 @@
 import { Router } from "express";
-import userController from "../controllers/userController.js";
 import { verifyToken } from "../middlewares/auth.js";
 import { authorize } from "../middlewares/authorize.js";
+import { userController } from "../container.js";
 
 const userRouter = Router();
 
+userRouter.get("/home", 
+  verifyToken, 
+  authorize("user"), 
+  userController.home
+);
 userRouter.post(
   "/profile",
   verifyToken,
@@ -22,11 +27,6 @@ userRouter.delete(
   verifyToken,
   authorize("user"),
   userController.deleteAccount
-);
-userRouter.get("/home", 
-  verifyToken, 
-  authorize("user"), 
-  userController.Home
 );
 userRouter.get("/list-tokens", 
   verifyToken, 
