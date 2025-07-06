@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { isTokenBlackListed } from "../utils/tokenBlacklist.js";
-import userRepository from "../repository/userRepository.js";
+import { userRepository } from "../container.js";
 
 export const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -18,10 +18,10 @@ export const verifyToken = async (req, res, next) => {
 
     const user = await userRepository.findById(decoded.userId);
 
-    if (!user.active) {
+    if (!user || !user.active) {
       return res
         .status(403)
-        .json({ message: "Conta desativado pelo administrador." });
+        .json({ message: "Conta inexistente ou desativada pelo administrador." });
     }
 
     req.user = decoded;
