@@ -1,7 +1,7 @@
 import { Router } from "express";
-import adminController from "../controllers/adminController.js";
 import { verifyToken } from "../middlewares/auth.js";
 import { authorize } from "../middlewares/authorize.js";
+import { adminController } from "../container.js";
 
 const adminRouter = Router();
 
@@ -9,7 +9,7 @@ adminRouter.get(
   "/dashboard",
   verifyToken,
   authorize("admin", "mod"),
-  adminController.dashBoardAdmin
+  adminController.homeAdmin
 );
 adminRouter.patch(
   "/disabled-user/:id",
