@@ -1,25 +1,25 @@
-import refreshTokenModel from "../models/RefreshToken.js";
-
-const refreshTokenRepository = {
+export default class RefreshTokenRepository {
+  constructor(refreshTokenModel) {
+    this.refreshTokenModel = refreshTokenModel;
+  }
+  
   async create(tokenData) {
-    return await refreshTokenModel.create(tokenData);
-  },
+    return await this.refreshTokenModel.create(tokenData);
+  }
 
   async findTokenByIdUser(userId) {
-    return await refreshTokenModel.find({ userId });
-  },
+    return await this.refreshTokenModel.find({ userId });
+  }
 
   async findByToken(token) {
-    return await refreshTokenModel.findOne({ token });
-  },
+    return await this.refreshTokenModel.findOne({ token });
+  }
 
   async delete(refreshToken) {
-    return await refreshTokenModel.deleteOne({ token: refreshToken });
-  },
+    return await this.refreshTokenModel.deleteOne({ token: refreshToken });
+  }
 
   async deleteByUserId(userId) {
-    return await refreshTokenModel.deleteMany({ userId });
-  },
-};
-
-export default refreshTokenRepository;
+    return await this.refreshTokenModel.deleteMany({ userId });
+  }
+}
