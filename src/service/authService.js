@@ -1,5 +1,3 @@
-import refreshTokenRepository from "../repository/refreshTokenRepository.js";
-import userRepository from "../repository/userRepository.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -7,18 +5,20 @@ import {
 import { blackListToken } from "../utils/tokenBlacklist.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import AppError from "../errors/AppError.js";
 
-const authService = {
+export default class AuthService {
+  constructor(userRepository, refreshTokenRepository) {
+    this.userRepository = userRepository;
+    this.refreshTokenRepository = refreshTokenRepository;
+  }
+
   async login({ email, password, userAgent, ip }) {
-    const user = await userRepository.findByEmail(email);
+    const user = await this.userRepository.findByEmail(email);
 
-    if (!user) {
-      throw new Error("Usuario não encontrado");
-    }
-
-    if (user.lockUntil && user.lockUntil > Date.now()) {
-      throw new Error("Conta bloqueada. Tente mais tarde");
-    }
+    if (!user) throw new AppError("Usuario não encontrado");
+    if (user.lockUntil && user.lockUntil > Date.now())
+      throw new AppError("Conta bloqueada. Tente mais tarde");
 
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
@@ -34,13 +34,13 @@ const authService = {
             $inc: { failedAttempts: 1 },
           };
 
-      await userRepository.update(user._id, updateQuery);
+      await this.userRepository.update(user._id, updateQuery);
 
-      throw new Error("Verifique suas credencias");
+      throw new AppError("Verifique suas credencias");
     }
 
     if (user.failedAttempts > 0 || user.lockUntil) {
-      await userRepository.update(user._id, {
+      await this.userRepository.update(user._id, {
         failedAttempts: 0,
         lockUntil: null,
       });
@@ -50,7 +50,7 @@ const authService = {
     const refreshToken = generateRefreshToken(user._id);
     const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    const saveRefresh = await refreshTokenRepository.create({
+    const saveRefresh = await this.refreshTokenRepository.create({
       userId: user._id,
       token: refreshToken,
       userAgent,
@@ -58,71 +58,67 @@ const authService = {
       expireAt,
     });
 
-    if (!saveRefresh) {
-      throw new Error("Falha ao salvar o refresh token");
-    }
+    if (!saveRefresh) throw new AppError("Falha ao salvar o refresh token");
+
     return { accessToken, refreshToken };
-  },
+  }
 
   async register({ name, email, password }) {
     if (!name || !email || !password)
-      throw new Error("Precisa preencher todos os campos");
-
+      throw new AppError("Precisa preencher todos os campos");
     if (password.length < 5)
-      throw new Error("Senha precisa ter no minimo 5 caracteres");
+      throw new AppError("Senha precisa ter no minimo 5 caracteres");
 
-    const userExists = await userRepository.findByEmail(email);
-    if (userExists) throw new Error("Este email já esta em uso");
+    const userExists = await this.userRepository.findByEmail(email);
+    if (userExists) throw new AppError("Este email já esta em uso");
 
-    const newUser = await userRepository.create({
+    const newUser = await this.userRepository.create({
       name,
       email,
       password,
     });
 
     return { message: "Usuário cadastrado com sucesso", newUser };
-  },
+  }
 
   async refresh(token) {
-    if (!token) throw new Error("Sem refresh token");
+    if (!token) throw new AppError("Sem refresh token");
 
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
     } catch (err) {
-      throw new Error("Refresh token inválido ou corrompido");
+      throw new AppError("Refresh token inválido ou corrompido");
     }
 
-    const user = await userRepository.findById(decoded.userId);
+    const user = await this.userRepository.findById(decoded.userId);
 
-    if (!user) throw new Error("usuario não encontrado");
+    if (!user) throw new AppError("usuario não encontrado");
 
-    const refreshToken = await refreshTokenRepository.findByToken(token);
+    const refreshToken = await this.refreshTokenRepository.findByToken(token);
 
     if (!refreshToken || new Date() > new Date(refreshToken.expireAt)) {
-      throw new Error("Esse token já esta expirado.");
+      throw new AppError("Esse token já esta expirado.");
     }
 
     const newAccessToken = generateAccessToken(user);
 
     return newAccessToken;
-  },
+  }
 
   async logout(token, refreshToken) {
     if (token) {
       blackListToken(token);
     }
 
-    if (!refreshToken) throw new Error("Nenhum token foi encontrado");
+    if (!refreshToken) throw new AppError("Nenhum token foi encontrado");
 
-    const deleted = await refreshTokenRepository.delete(refreshToken);
+    const deleted = await this.refreshTokenRepository.delete(refreshToken);
 
     if (!deleted) {
-      throw new Error("Falha ao excluir o refresh token");
+      throw new AppError("Falha ao excluir o refresh token");
     }
 
     return { message: "Logout feito com sucesso" };
-  },
-};
-
-export default authService;
+  }
+}
